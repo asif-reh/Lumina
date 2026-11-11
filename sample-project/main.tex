@@ -1,0 +1,39 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{ink}{HTML}{1E2A4A}
+\definecolor{lumina}{HTML}{C9842A}
+
+\title{\textcolor{ink}{A Local Lamp for Scientific Manuscripts}\\[0.35em]
+\large A sample note shipped with Lumina}
+\author{The Lumina Sample Project}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This note is the sample project that opens with Lumina.
+It is a small multi-file manuscript: prose split across section files, a table, a displayed equation, a TikZ diagram, and a bibliography of works that exist in the public record.
+One bibliography entry is synthetic and labeled as such, so the citation checker has an unmatched row to report.
+Typesetting does not depend on a hosted editor.
+\end{abstract}
+
+\input{sections/introduction}
+\input{sections/practice}
+\input{sections/closing}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
