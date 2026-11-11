@@ -159,15 +159,20 @@ export function listTextFiles(id: string): { path: string; content: string }[] {
   return out;
 }
 
-function copySampleFiles(target: string) {
-  const source = path.join(process.cwd(), "sample-project");
-  if (!fs.existsSync(source)) {
-    throw new Error("sample-project is missing from the Lumina install.");
-  }
-  fs.cpSync(source, target, { recursive: true });
+function copyTree(sourceDir: string, target: string, missing: string) {
+  if (!fs.existsSync(sourceDir)) throw new Error(missing);
+  fs.cpSync(sourceDir, target, { recursive: true });
 }
 
-export function createProject(name: string, options?: { seed?: "blank" | "sample"; id?: string }): ProjectMeta {
+function copySampleFiles(target: string) {
+  copyTree(path.join(process.cwd(), "sample-project"), target, "sample-project is missing from the Lumina install.");
+}
+
+function copySampleCv(target: string) {
+  copyTree(path.join(process.cwd(), "sample-cv"), target, "sample-cv is missing from the Lumina install.");
+}
+
+export function createProject(name: string, options?: { seed?: "blank" | "sample" | "cv"; id?: string }): ProjectMeta {
   const trimmed = name.trim();
   if (!trimmed || trimmed.length > 120) throw new Error("Give the project a name under 120 characters.");
   const id =
@@ -184,6 +189,8 @@ export function createProject(name: string, options?: { seed?: "blank" | "sample
   const mainFile = "main.tex";
   if (options?.seed === "sample") {
     copySampleFiles(root);
+  } else if (options?.seed === "cv") {
+    copySampleCv(root);
   } else {
     const starter = `\\documentclass{article}\n\\begin{document}\n\\section{${trimmed.replaceAll(/[{}\\]/g, "")}}\n\nStart writing.\n\\end{document}\n`;
     fs.writeFileSync(path.join(root, "main.tex"), starter);
