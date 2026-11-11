@@ -26,7 +26,7 @@ npm run setup          # downloads Tectonic 0.17 into tools/tectonic
 npm run dev            # http://127.0.0.1:43123
 ```
 
-`npm run setup` picks a pinned build for Linux x64/arm64 and macOS x64/arm64. If your platform is not listed, install Tectonic yourself and set `TECTONIC_BIN`.
+`npm run setup` picks a pinned build for Linux x64/arm64 and macOS x64/arm64. The Linux builds are static musl binaries, so they do not depend on the host glibc. If your platform is not listed, install Tectonic yourself and set `TECTONIC_BIN`.
 
 The first compile downloads the Tectonic package bundle into `data/tectonic-cache`. That can take a few minutes. Later compiles reuse the cache.
 
