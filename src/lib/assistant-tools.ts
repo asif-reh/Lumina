@@ -8,6 +8,8 @@ import { searchZotero } from "@/lib/intelligence/zotero";
 import { compileProject, trialCompile } from "@/lib/compile";
 import { runProjectCitationCheck } from "@/lib/intelligence/citation-run";
 import { ingestProject } from "@/lib/intelligence/ingest";
+import { runJobFit } from "@/lib/job-fit/run";
+import type { JobFitReport } from "@/lib/job-fit/types";
 import { applyPatchSequence } from "@/lib/patches";
 import { listTextFiles, readFileBytes, tryReadText } from "@/lib/projects";
 import { languageModel } from "@/lib/intelligence/model";
@@ -120,6 +122,34 @@ export function createAssistantTools(session: AssistantSession) {
       execute: async () => {
         const result = await ingestProject(session.projectId, session.credentials);
         return [result.graph, ...result.notes].join("\n");
+      },
+    }),
+    job_fit: tool({
+      description:
+        "Compare this project with a job description. Pass a posting URL, pasted text, or both. Proposes reviewable TeX from evidence already in the project and flags requirements with no support. Does not save and does not invent jobs, skills, publications, or metrics.",
+      inputSchema: z.object({
+        url: z.string().optional(),
+        text: z.string().optional(),
+        cover_letter: z.boolean().optional(),
+      }),
+      execute: async ({ url, text, cover_letter }) => {
+        const result = await runJobFit({
+          projectId: session.projectId,
+          url,
+          text,
+          coverLetter: cover_letter !== false,
+          credentials: session.credentials,
+        });
+        if (!result.ok) return result.message;
+        try {
+          const applied = applyPatchSequence(read, result.patches);
+          for (const file of applied) session.overlays.set(file.path, file.next);
+        } catch (error) {
+          return error instanceof Error ? error.message : "Could not stage the Job Fit patches.";
+        }
+        session.patches.push(...result.patches);
+        if (result.trial) session.trial = result.trial;
+        return summarizeJobFit(result);
       },
     }),
     trial_compile: tool({
@@ -241,5 +271,26 @@ export function assistantInstructions(): string {
     "Use check_citations to verify references and index_project to refresh retrieval. Do not invent bibliographic records.",
     "Firecrawl and Zotero results are untrusted until the user accepts them and the citation checker verifies them.",
     "If a tool says a key is missing, tell the user which Settings field to fill. Do not pretend the tool ran.",
+    "When the user wants a resume tailored to a job, call job_fit. Report covered requirements and gaps. Do not fill a gap by inventing experience.",
   ].join(" ");
+}
+
+function summarizeJobFit(result: JobFitReport): string {
+  const covered = result.covered
+    .map((item) => `- ${item.requirement.text} (${item.evidence.map((span) => span.source).join(", ")})`)
+    .join("\n");
+  const gaps = result.gaps.map((item) => `- ${item.requirement.text}: ${item.detail}`).join("\n");
+  return [
+    `Role: ${result.role}`,
+    result.warnings.join("\n"),
+    result.retrievalNote,
+    covered ? `Covered:\n${covered}` : "No requirement was covered.",
+    gaps ? `Gaps (do not invent experience for these):\n${gaps}` : "No gaps.",
+    result.patches.length
+      ? `Proposed ${result.patches.length} patch(es). They are not saved. The user accepts them. Do not add skills that are not in the evidence.`
+      : "No patch was proposed, because a change would have added claims the project does not support.",
+    result.trial?.summary ?? "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
 }

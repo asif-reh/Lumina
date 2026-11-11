@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import {
+  Briefcase,
   FilePlus,
   FolderOpen,
   Loader2,
@@ -15,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { AssistantPane } from "@/components/assistant-pane";
 import { CitationDialog } from "@/components/citation-dialog";
+import { JobFitDialog } from "@/components/job-fit-dialog";
 import { FileTree } from "@/components/file-tree";
 import { LatexEditor, type EditorSelection } from "@/components/latex-editor";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -70,6 +72,7 @@ export function Workspace() {
   const [fileOpen, setFileOpen] = useState(false);
   const [fileName, setFileName] = useState("sections/notes.tex");
   const [citationsOpen, setCitationsOpen] = useState(false);
+  const [jobFitOpen, setJobFitOpen] = useState(false);
   const [report, setReport] = useState<CitationReport | null>(null);
   const [checking, setChecking] = useState(false);
   const [citationError, setCitationError] = useState<string | null>(null);
@@ -230,11 +233,11 @@ export function Workspace() {
     await loadProject(data.project.id);
   }
 
-  async function createNamedProject() {
+  async function createNamedProject(seed: "blank" | "cv" = "blank") {
     const created = await api<{ project: ProjectSummary }>("/api/projects", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: newName }),
+      body: JSON.stringify({ name: newName, seed }),
     });
     setNewOpen(false);
     setNewName("");
@@ -308,7 +311,7 @@ export function Workspace() {
             if (file) void importZip(file).catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Import failed."));
           }}
         />
-        <NewProjectDialog open={newOpen} name={newName} setName={setNewName} setOpen={setNewOpen} onCreate={() => void createNamedProject().catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not create the project."))} />
+        <NewProjectDialog open={newOpen} name={newName} setName={setNewName} setOpen={setNewOpen} onCreate={(seed) => void createNamedProject(seed).catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not create the project."))} />
       </div>
     );
   }
@@ -342,6 +345,9 @@ export function Workspace() {
           <Button type="button" size="sm" className="bg-lumina text-lumina-foreground hover:bg-lumina/90" onClick={() => void compile()} disabled={compiling}>
             {compiling ? <Loader2 className="animate-spin" /> : null}
             {compiling ? "Compiling" : "Compile"}
+          </Button>
+          <Button type="button" size="sm" variant="ghost" className="text-paper hover:bg-white/10 hover:text-paper" onClick={() => setJobFitOpen(true)}>
+            <Briefcase /> <span className="hidden md:inline">Job Fit</span>
           </Button>
           <Button type="button" size="sm" variant="ghost" className="text-paper hover:bg-white/10 hover:text-paper" onClick={() => setCitationsOpen(true)}>
             <Quote /> <span className="hidden md:inline">Citations</span>
@@ -583,7 +589,7 @@ export function Workspace() {
         name={newName}
         setName={setNewName}
         setOpen={setNewOpen}
-        onCreate={() => void createNamedProject().catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not create the project."))}
+        onCreate={(seed) => void createNamedProject(seed).catch((error: unknown) => toast.error(error instanceof Error ? error.message : "Could not create the project."))}
       />
 
       <Dialog open={fileOpen} onOpenChange={setFileOpen}>
@@ -600,6 +606,22 @@ export function Workspace() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <JobFitDialog
+        open={jobFitOpen}
+        onOpenChange={setJobFitOpen}
+        projectId={project.id}
+        beforeRun={flushSave}
+        onApplied={(files) => {
+          const current = files.find((file) => file.path === openPath);
+          if (current) {
+            draft.current = { path: current.path, content: current.content, saved: current.content };
+            setContent(current.content);
+            setSaving("saved");
+          }
+          void api<ProjectPayload>(`/api/projects/${project.id}`).then((data) => setTree(data.tree));
+        }}
+      />
 
       <CitationDialog
         open={citationsOpen}
@@ -635,18 +657,24 @@ function NewProjectDialog({
   name: string;
   setName: (value: string) => void;
   setOpen: (open: boolean) => void;
-  onCreate: () => void;
+  onCreate: (seed: "blank" | "cv") => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>New project</DialogTitle>
-          <DialogDescription>Starts from a one-file article. The sample note stays in the project list.</DialogDescription>
+          <DialogDescription>
+            Starts from a one-file article, or from the fictional sample CV used to try Job Fit. The sample note stays
+            in the project list.
+          </DialogDescription>
         </DialogHeader>
         <Input placeholder="Working title" value={name} onChange={(event) => setName(event.target.value)} />
         <DialogFooter>
-          <Button type="button" onClick={onCreate} disabled={!name.trim()}>
+          <Button type="button" variant="outline" onClick={() => onCreate("cv")}>
+            Sample CV
+          </Button>
+          <Button type="button" onClick={() => onCreate("blank")} disabled={!name.trim()}>
             Create
           </Button>
         </DialogFooter>

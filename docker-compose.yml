@@ -1,3 +1,7 @@
+# Local Postgres for `npm run dev`.
+# `docker compose up -d` starts only this database, on host port 54329.
+# `docker compose --profile prod up -d --build` also starts the Lumina server.
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -9,6 +13,54 @@ services:
       - "54329:5432"
     volumes:
       - lumina-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lumina -d lumina"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    profiles: ["prod"]
+    build: .
+    ports:
+      - "43123:43123"
+    environment:
+      DATABASE_URL: postgres://lumina:lumina@postgres:5432/lumina
+      LUMINA_DATA_DIR: /data
+      PORT: "43123"
+      HOSTNAME: 0.0.0.0
+      # Optional server overrides. Copy .env.example to .env. Browser Settings still win.
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY:-}
+      LLAMA_CLOUD_API_KEY: ${LLAMA_CLOUD_API_KEY:-}
+      SEMANTIC_SCHOLAR_API_KEY: ${SEMANTIC_SCHOLAR_API_KEY:-}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_HOST: ${LANGFUSE_HOST:-}
+      PINECONE_API_KEY: ${PINECONE_API_KEY:-}
+      PINECONE_HOST: ${PINECONE_HOST:-}
+      ZOTERO_API_KEY: ${ZOTERO_API_KEY:-}
+      ZOTERO_USER_ID: ${ZOTERO_USER_ID:-}
+    volumes:
+      - lumina-data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:'+(process.env.PORT||43123)+'/api/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
 
 volumes:
   lumina-pg:
+  lumina-data:

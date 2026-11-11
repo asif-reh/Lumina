@@ -1,0 +1,52 @@
+% Fictional demonstration CV for Lumina Job Fit. Not a real person.
+% No private resume data is included. Metrics below are part of the fiction
+% and are the only numbers Job Fit is allowed to repeat.
+\documentclass[11pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\setlist[itemize]{leftmargin=1.2em,itemsep=0.25em,topsep=0.3em}
+\pagestyle{empty}
+\begin{document}
+\begin{center}
+{\LARGE Sample Candidate}\\[0.3em]
+Research engineer, AI infrastructure\\[0.3em]
+sample.candidate@example.com
+\end{center}
+
+\section*{Summary}
+Research engineer focused on retrieval systems, evaluation, and the tooling around scientific writing. Recent work connects TypeScript services to Postgres with pgvector and chunks long documents before embedding.
+
+\section*{Skills}
+\begin{itemize}
+\item TypeScript, Python, and SQL
+\item Postgres, pgvector, and retrieval evaluation
+\item Document chunking before embedding, and a citation graph of which passage supported a claim
+\item LaTeX manuscripts compiled locally with Tectonic
+\end{itemize}
+
+\section*{Experience}
+\subsection*{Northwind Research \hfill 2023--2025}
+\textbf{Research engineer}
+\begin{itemize}
+\item Built a retrieval service over pgvector so internal papers could be searched by section.
+\item Chunked papers with a sentence splitter before embedding, and kept a citation graph of which passage supported a claim.
+\item Wrote evaluation notes that compared retrieved passages with the cited bibliography instead of trusting the model output.
+\item Maintained a LaTeX workspace that compiled manuscripts locally with Tectonic.
+\end{itemize}
+
+\subsection*{Harbor Lab \hfill 2021--2023}
+\textbf{Software engineer}
+\begin{itemize}
+\item Implemented a TypeScript API for document ingest and a Python worker that extracted text from PDFs.
+\item Stored embeddings in Postgres when a vector extension was available, and in a local file when it was not.
+\end{itemize}
+
+\section*{Education}
+\subsection*{State University \hfill 2021}
+B.S. Computer Science. Coursework included databases, compilers, and machine learning.
+
+\section*{Selected reading}
+Familiar with Vaswani et al., Attention Is All You Need (2017). This CV does not claim authorship of that paper. The bibliography entry is the public work, included so citation check has a real record.
+
+\end{document}

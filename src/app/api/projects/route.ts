@@ -13,8 +13,10 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as { name?: string };
-    const project = createProject(body.name ?? "", { seed: "blank" });
+    const body = (await request.json()) as { name?: string; seed?: string };
+    const seed = body.seed === "cv" ? "cv" : "blank";
+    const name = body.name?.trim() || (seed === "cv" ? "Sample CV" : "");
+    const project = createProject(name, { seed });
     return jsonOk({ project }, 201);
   } catch (error) {
     return fail(error);

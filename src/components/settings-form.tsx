@@ -84,7 +84,7 @@ export function SettingsForm() {
             value={settings.openaiKey}
             placeholder="sk-…"
             onChange={(openaiKey) => patch({ openaiKey })}
-            note="Required for the assistant when the provider is OpenAI, and always required for embeddings. Stored only in this browser."
+            note="Required for the assistant and Job Fit when the provider is OpenAI, and always required for embeddings. Stored only in this browser."
           />
           <Field
             label="OpenRouter API key"
@@ -168,7 +168,7 @@ export function SettingsForm() {
             value={settings.firecrawlKey}
             placeholder="fc-…"
             onChange={(firecrawlKey) => patch({ firecrawlKey })}
-            note="Optional. Unlocks web search, scrape, and structured extraction. You accept items before they enter the bibliography."
+            note="Optional. Unlocks web search, scrape, and Job Fit on a posting URL. Without it, paste the job text. You accept items before they enter the bibliography."
           />
           <Field
             label="Zotero API key"
