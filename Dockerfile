@@ -21,11 +21,12 @@ ENV HOSTNAME=0.0.0.0
 ENV PORT=43123
 ENV LUMINA_DATA_DIR=/data
 
+# The pinned x86_64 Tectonic build is dynamically linked to libgraphite2.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl \
+  && apt-get install -y --no-install-recommends ca-certificates curl libgraphite2-3 \
   && rm -rf /var/lib/apt/lists/* \
-  && groupadd --system --gid 1001 lumina \
-  && useradd --system --uid 1001 --gid lumina --home-dir /app --shell /usr/sbin/nologin lumina
+  && groupadd --gid 1001 lumina \
+  && useradd --uid 1001 --gid lumina --home-dir /app --shell /usr/sbin/nologin lumina
 
 COPY --from=builder --chown=lumina:lumina /app/.next/standalone ./
 COPY --from=builder --chown=lumina:lumina /app/.next/static ./.next/static
